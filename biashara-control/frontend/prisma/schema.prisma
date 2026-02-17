@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum DebtDirection {
+  OWED_TO_ME
+  I_OWE
+}
+
+enum DebtStatus {
+  OPEN
+  PAID
+}
+
+enum EntryType {
+  SALE
+  EXPENSE
+  STOCK_PURCHASE
+  MPESA_SIM
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  businessName String?
+  businessType String?
+  pin          String?
+  createdAt    DateTime      @default(now())
+  sessions     Session[]
+  products     Product[]
+  entries      Entry[]
+  debts        Debt[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id      String  @id @default(cuid())
+  userId  String  @unique
+  cash    Float   @default(0)
+  mpesa   Float   @default(0)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  unitCost    Float
+  quantity    Float
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Entry {
+  id            String    @id @default(cuid())
+  userId        String
+  type          EntryType
+  amount        Float
+  paymentMethod String
+  category      String?
+  productId     String?
+  quantity      Float?
+  note          String?
+  happenedAt    DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Debt {
+  id          String        @id @default(cuid())
+  userId      String
+  person      String
+  amount      Float
+  direction   DebtDirection
+  status      DebtStatus    @default(OPEN)
+  createdAt   DateTime      @default(now())
+  paidAt      DateTime?
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
