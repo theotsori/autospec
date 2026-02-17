@@ -1,0 +1,22 @@
+export const mobileComponents = [
+  'TopStatusBarCard',
+  'ProfitHeroCard',
+  'GrowthPill',
+  'WalletBalanceCard',
+  'KpiDangerCard',
+  'QuickActionButtonXL',
+  'QuickAddBottomSheet',
+  'MpesaSyncStatusChip',
+  'InsightTextBanner',
+  'DebtRiskBadge',
+  'DebtReminderCard',
+  'InventoryItemCard',
+  'DeadStockAlertCard',
+  'TaxSetAsideCard',
+  'VatThresholdWarningCard',
+  'SubscriptionTrialBanner',
+  'LockedStateOverlay',
+  'OfflineSyncIndicator',
+  'SkeletonCard',
+  'ConfirmActionSheet'
+] as const;
