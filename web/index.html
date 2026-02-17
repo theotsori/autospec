@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biashara Control — Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app" id="app">
+      <header class="topbar card">
+        <div>
+          <h1>Biashara Control</h1>
+          <p class="muted">Daily business survival dashboard</p>
+        </div>
+        <button id="syncBtn" class="pill">Sync</button>
+      </header>
+
+      <section id="statusBanner" class="status-banner card" aria-live="polite">
+        <p id="statusMessage" class="status-message"></p>
+        <p id="todayProfit" class="today-profit"></p>
+        <p id="statusHint" class="status-hint"></p>
+      </section>
+
+      <section class="card">
+        <h2>Quick Add</h2>
+        <div class="quick-actions">
+          <button class="quick-btn sale" data-type="sale">+ Sale</button>
+          <button class="quick-btn expense" data-type="expense">+ Expense</button>
+          <button class="quick-btn stock" data-type="stock">+ Stock Bought</button>
+          <button class="quick-btn debt" data-type="debt">+ Record Debt</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Money Position</h2>
+        <div class="money-grid" id="moneyCards"></div>
+      </section>
+
+      <section class="card">
+        <h2>Business Health</h2>
+        <div class="health-list" id="healthList"></div>
+      </section>
+
+      <section class="card">
+        <h2>Smart Alerts</h2>
+        <div id="alertsPanel" class="stack"></div>
+      </section>
+
+      <section class="card">
+        <h2>Today Activity</h2>
+        <div id="timeline" class="stack"></div>
+      </section>
+    </main>
+
+    <dialog id="quickAddModal" class="modal">
+      <form id="quickAddForm" class="modal-content" method="dialog">
+        <h3 id="modalTitle"></h3>
+        <label>
+          Amount (KES)
+          <input type="number" id="modalAmount" min="1" required />
+        </label>
+        <label>
+          Note
+          <input type="text" id="modalNote" maxlength="80" placeholder="Optional note" />
+        </label>
+        <menu>
+          <button value="cancel" class="secondary">Cancel</button>
+          <button value="confirm" id="saveEntryBtn">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
