@@ -4,6 +4,7 @@ export type SubscriptionRecord = {
   status: SubscriptionState;
   trialEndAt: Date;
   paidUntil: Date | null;
+  graceUntil: Date | null;
   lockedAt: Date | null;
 };
 
@@ -11,10 +12,22 @@ export const resolveSubscriptionState = (s: SubscriptionRecord, now = new Date()
   if (s.lockedAt) return 'locked';
   if (s.paidUntil && s.paidUntil >= now) return 'active';
   if (s.status === 'trialing' && s.trialEndAt >= now) return 'trialing';
+  if (s.graceUntil && s.graceUntil >= now) return 'past_due';
   if (s.trialEndAt < now) return 'past_due';
   return s.status;
 };
 
+export const computeGraceUntil = (s: SubscriptionRecord) => {
+  const dueDate = s.paidUntil ?? s.trialEndAt;
+  const graceUntil = new Date(dueDate);
+  graceUntil.setDate(graceUntil.getDate() + 7);
+  return graceUntil;
+};
+
+export const shouldLockBusiness = (s: SubscriptionRecord, now = new Date()) => {
+  if (resolveSubscriptionState(s, now) === 'locked') return true;
+  const graceUntil = s.graceUntil ?? computeGraceUntil(s);
+  return now > graceUntil;
 export const shouldLockBusiness = (s: SubscriptionRecord, now = new Date()) => {
   const state = resolveSubscriptionState(s, now);
   if (state === 'locked') return true;
@@ -30,6 +43,8 @@ export const shouldLockBusiness = (s: SubscriptionRecord, now = new Date()) => {
 export const subscriptionGate = (state: SubscriptionState) => ({
   allowWrite: state !== 'locked',
   allowRead: true,
+  allowExport: true,
+  showPaywall: state === 'past_due' || state === 'locked'
   showLockBanner: state === 'past_due' || state === 'locked'
 });
 
@@ -42,6 +57,17 @@ export const applyPayment = (current: SubscriptionRecord, paidAt: Date, months =
     ...current,
     status: 'active',
     paidUntil,
+    graceUntil: null,
+    lockedAt: null
+  };
+};
+
+export const lockSubscription = (current: SubscriptionRecord, reason = 'unpaid'): SubscriptionRecord => ({
+  ...current,
+  status: 'locked',
+  lockedAt: new Date(),
+  graceUntil: current.graceUntil ?? computeGraceUntil(current)
+});
     lockedAt: null
   };
 };

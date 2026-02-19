@@ -3,6 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TYPE plan_status AS ENUM ('trialing', 'active', 'past_due', 'locked');
 CREATE TYPE ledger_source AS ENUM ('manual', 'mpesa', 'system');
+CREATE TYPE ledger_type AS ENUM ('sale', 'expense', 'stock_purchase', 'supplier_payment', 'owner_withdrawal', 'owner_topup', 'transfer');
 CREATE TYPE ledger_type AS ENUM ('sale', 'expense', 'stock_purchase', 'supplier_payment', 'owner_withdrawal', 'owner_topup', 'loan_in', 'loan_out', 'transfer');
 CREATE TYPE debt_direction AS ENUM ('owed_to_me', 'i_owe');
 CREATE TYPE debt_status AS ENUM ('open', 'partial', 'closed', 'defaulted');
@@ -12,6 +13,7 @@ CREATE TABLE businesses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(120) NOT NULL,
   phone_e164 VARCHAR(20) NOT NULL UNIQUE,
+  category VARCHAR(40) NOT NULL DEFAULT 'retail',
   currency CHAR(3) NOT NULL DEFAULT 'KES',
   timezone VARCHAR(64) NOT NULL DEFAULT 'Africa/Nairobi',
   preferred_language VARCHAR(8) NOT NULL DEFAULT 'en',
@@ -25,6 +27,7 @@ CREATE TABLE owners (
   full_name VARCHAR(120) NOT NULL,
   email VARCHAR(150),
   password_hash TEXT NOT NULL,
+  pin_hash TEXT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   last_login_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -40,10 +43,24 @@ CREATE TABLE subscriptions (
   trial_start_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   trial_end_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '14 days'),
   paid_until TIMESTAMPTZ,
+  grace_until TIMESTAMPTZ,
   locked_at TIMESTAMPTZ,
   lock_reason TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE subscription_payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  checkout_reference VARCHAR(60) NOT NULL,
+  amount_kes INTEGER NOT NULL CHECK (amount_kes > 0),
+  status VARCHAR(20) NOT NULL CHECK (status IN ('pending','success','failed')),
+  provider VARCHAR(20) NOT NULL DEFAULT 'mpesa_mock',
+  paid_at TIMESTAMPTZ,
+  raw_payload JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (business_id, checkout_reference)
 );
 
 CREATE TABLE wallets (
@@ -80,6 +97,8 @@ CREATE TABLE inventory_items (
   unit_cost_kes NUMERIC(14,2) NOT NULL CHECK (unit_cost_kes >= 0),
   quantity_on_hand NUMERIC(14,3) NOT NULL DEFAULT 0,
   reorder_level NUMERIC(14,3) NOT NULL DEFAULT 0,
+  sold_last_7d NUMERIC(14,3) NOT NULL DEFAULT 0,
+  sold_last_30d NUMERIC(14,3) NOT NULL DEFAULT 0,
   last_movement_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -162,6 +181,7 @@ CREATE TABLE mpesa_connections (
   shortcode VARCHAR(20),
   passkey TEXT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  last_sync_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -175,6 +195,7 @@ CREATE TABLE mpesa_transactions (
   msisdn VARCHAR(20),
   payer_name VARCHAR(120),
   message TEXT,
+  inferred_category ledger_type,
   happened_at TIMESTAMPTZ NOT NULL,
   raw_payload JSONB NOT NULL,
   mapped_ledger_entry_id UUID REFERENCES ledger_entries(id),
@@ -188,6 +209,40 @@ CREATE TABLE device_sync_queue (
   owner_id UUID NOT NULL REFERENCES owners(id) ON DELETE CASCADE,
   operation VARCHAR(60) NOT NULL,
   payload JSONB NOT NULL,
+  idempotency_key VARCHAR(120) NOT NULL,
+  queued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  synced_at TIMESTAMPTZ,
+  failed_at TIMESTAMPTZ,
+  UNIQUE (business_id, idempotency_key)
+);
+
+CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_businesses_touch BEFORE UPDATE ON businesses FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+CREATE TRIGGER tr_subscriptions_touch BEFORE UPDATE ON subscriptions FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+CREATE TRIGGER tr_inventory_items_touch BEFORE UPDATE ON inventory_items FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+CREATE TRIGGER tr_debts_touch BEFORE UPDATE ON debts FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+ALTER TABLE ledger_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE debts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_ledger_policy ON ledger_entries
+  USING (business_id = current_setting('app.business_id', true)::uuid)
+  WITH CHECK (business_id = current_setting('app.business_id', true)::uuid);
+
+CREATE POLICY tenant_inventory_policy ON inventory_items
+  USING (business_id = current_setting('app.business_id', true)::uuid)
+  WITH CHECK (business_id = current_setting('app.business_id', true)::uuid);
+
+CREATE POLICY tenant_debts_policy ON debts
+  USING (business_id = current_setting('app.business_id', true)::uuid)
+  WITH CHECK (business_id = current_setting('app.business_id', true)::uuid);
   queued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   synced_at TIMESTAMPTZ,
   failed_at TIMESTAMPTZ
