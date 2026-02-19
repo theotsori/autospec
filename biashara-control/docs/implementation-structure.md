@@ -34,6 +34,7 @@
 
 ## 3. Frontend page structure
 - `frontend/src/app/routes.ts`
+- `frontend/src/app/App.tsx`
 - pages:
   - `/login`
   - `/onboarding`
@@ -51,6 +52,7 @@
 
 ## 4. UI component list
 - `frontend/src/components/component-registry.ts`
+- implemented mobile UI shell, tabs, quick-add modal, and action cards in `frontend/src/app/App.tsx`
 - components:
   - `ProfitHeroCard`
   - `WalletBalancesCard`
