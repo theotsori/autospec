@@ -2,288 +2,86 @@ openapi: 3.0.3
 info:
   title: Biashara Control API
   version: 1.0.0
-  description: Production contract for owner-only multi-tenant MVP
 servers:
   - url: https://api.biasharacontrol.com/v1
 security:
   - bearerAuth: []
-tags:
-  - name: Auth
-  - name: Dashboard
-  - name: Ledger
-  - name: Inventory
-  - name: Debts
-  - name: Tax
-  - name: Mpesa
-  - name: Subscription
-  - name: Sync
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-  parameters:
-    BusinessIdHeader:
-      name: x-business-id
-      in: header
-      required: true
-      schema:
-        type: string
-        format: uuid
-  schemas:
-    Money:
-      type: object
-      required: [amountKes]
-      properties:
-        amountKes:
-          type: number
-          minimum: 0
-          example: 2450
-    ErrorResponse:
-      type: object
-      required: [code, message]
-      properties:
-        code: { type: string, example: VALIDATION_ERROR }
-        message: { type: string, example: Invalid phone number }
-    AuthTokens:
-      type: object
-      required: [accessToken, refreshToken, expiresInSeconds]
-      properties:
-        accessToken: { type: string }
-        refreshToken: { type: string }
-        expiresInSeconds: { type: integer, example: 900 }
-    DashboardToday:
-      type: object
-      required: [todayProfitKes, cashBalanceKes, mpesaBalanceKes, stockValueKes, owedToMeKes, iOweKes, growthVsYesterdayPct, safetyColor, insight]
-      properties:
-        todayProfitKes: { type: number, example: 5400 }
-        cashBalanceKes: { type: number, example: 18300 }
-        mpesaBalanceKes: { type: number, example: 27650 }
-        stockValueKes: { type: number, example: 91500 }
-        owedToMeKes: { type: number, example: 11200 }
-        iOweKes: { type: number, example: 8700 }
-        growthVsYesterdayPct: { type: number, example: 12.4 }
-        safetyColor: { type: string, enum: [green, yellow, red] }
-        insight: { type: string, example: You made KES 5,400 today. }
-    LedgerEntryCreate:
-      type: object
-      required: [type, amountKes, channel, happenedAt]
-      properties:
-        type:
-          type: string
-          enum: [sale, expense, stock_purchase, supplier_payment, owner_withdrawal, owner_topup, transfer]
-        amountKes: { type: number, minimum: 0 }
-        channel: { type: string, enum: [cash, mpesa, mixed] }
-        note: { type: string, maxLength: 240 }
-        happenedAt: { type: string, format: date-time }
-        idempotencyKey: { type: string, maxLength: 120 }
-    InventoryItemCreate:
-      type: object
-      required: [name, unitCostKes, quantity]
-      properties:
-        name: { type: string, maxLength: 120 }
-        unitCostKes: { type: number, minimum: 0 }
-        quantity: { type: number, minimum: 0 }
-        reorderLevel: { type: number, minimum: 0, default: 0 }
-    DebtCreate:
-      type: object
-      required: [direction, counterpartyName, principalKes]
-      properties:
-        direction: { type: string, enum: [owed_to_me, i_owe] }
-        counterpartyName: { type: string, maxLength: 120 }
-        principalKes: { type: number, minimum: 1 }
-        dueDate: { type: string, format: date }
-        note: { type: string, maxLength: 240 }
-    MpesaSimulateInput:
-      type: object
-      required: [amountKes, msisdn, message, happenedAt]
-      properties:
-        amountKes: { type: number, minimum: 1 }
-        msisdn: { type: string, example: "254712345678" }
-        message: { type: string, example: "Payment for salon service" }
-        happenedAt: { type: string, format: date-time }
-
 paths:
   /auth/signup:
     post:
-      tags: [Auth]
-      security: []
-      summary: Register business and owner
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [businessName, phoneE164, ownerName, pin]
-              properties:
-                businessName: { type: string }
-                phoneE164: { type: string }
-                ownerName: { type: string }
-                pin: { type: string, minLength: 4, maxLength: 6 }
-      responses:
-        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/AuthTokens' } } } }
-        '400': { description: Validation error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
-
+      summary: Register business + owner + trial subscription
   /auth/login:
     post:
-      tags: [Auth]
-      security: []
       summary: Login owner
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [phoneE164, pin]
-              properties:
-                phoneE164: { type: string }
-                pin: { type: string }
-      responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AuthTokens' } } } }
-
-  /dashboard/today:
-    get:
-      tags: [Dashboard]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Get today control panel metrics
-      responses:
-        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/DashboardToday' } } } }
-
-  /metrics/profit:
-    get:
-      tags: [Dashboard]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Daily/weekly/monthly profit and burn rate
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  dailyProfitKes: { type: number }
-                  weeklyProfitKes: { type: number }
-                  monthlyProfitKes: { type: number }
-                  burnRateKes: { type: number }
-                  explanation: { type: string }
-
-  /ledger/entries:
+  /auth/refresh:
     post:
-      tags: [Ledger]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Add sale, expense, stock purchase, or owner transfer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/LedgerEntryCreate' }
-      responses:
-        '201': { description: Created }
-    get:
-      tags: [Ledger]
-      parameters:
-        - { $ref: '#/components/parameters/BusinessIdHeader' }
-        - name: from
-          in: query
-          schema: { type: string, format: date }
-        - name: to
-          in: query
-          schema: { type: string, format: date }
-      summary: List timeline feed
-      responses:
-        '200': { description: OK }
-
-  /inventory/items:
-    post:
-      tags: [Inventory]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Add inventory product
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/InventoryItemCreate' }
-      responses:
-        '201': { description: Created }
-    get:
-      tags: [Inventory]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: List inventory cards
-      responses:
-        '200': { description: OK }
-
-  /inventory/alerts:
-    get:
-      tags: [Inventory]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Dead stock and low stock alerts
-      responses:
-        '200': { description: OK }
-
-  /debts:
-    post:
-      tags: [Debts]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Someone owes me / I owe someone
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/DebtCreate' }
-      responses:
-        '201': { description: Created }
-    get:
-      tags: [Debts]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: List debts by risk and overdue days
-      responses:
-        '200': { description: OK }
-
-  /tax/estimate:
-    get:
-      tags: [Tax]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Daily and monthly tax estimate + VAT warning
-      responses:
-        '200': { description: OK }
-
-  /mpesa/simulate:
-    post:
-      tags: [Mpesa]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Simulate incoming mpesa webhook
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/MpesaSimulateInput' }
-      responses:
-        '201': { description: Created }
-
+      summary: Rotate access token
   /subscription/status:
     get:
-      tags: [Subscription]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Trial, payment, and lock status
-      responses:
-        '200': { description: OK }
-
+      summary: Get trial/payment/lock status
   /subscription/payments/initiate:
     post:
-      tags: [Subscription]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Initiate mock checkout for KES 3000
-      responses:
-        '202': { description: Accepted }
-
+      summary: Initiate mobile payment request (mock)
+  /subscription/payments/webhook:
+    post:
+      summary: Payment callback endpoint
+  /dashboard/today:
+    get:
+      summary: Mobile dashboard metrics
+  /metrics/profit:
+    get:
+      summary: Daily weekly monthly profit and burn rate
+  /ledger/entries:
+    post:
+      summary: Add manual sales/expense/stock entries
+    get:
+      summary: List entries with date filters
+  /wallets:
+    get:
+      summary: Cash and mpesa balances
+  /inventory/items:
+    get:
+      summary: List stock items
+    post:
+      summary: Add item
+  /inventory/items/{itemId}:
+    patch:
+      summary: Update item
+  /inventory/events:
+    post:
+      summary: Stock in/out/adjustment
+  /inventory/alerts:
+    get:
+      summary: Dead stock and low stock alerts
+  /debts:
+    get:
+      summary: List debts
+    post:
+      summary: Create debt (owed_to_me or i_owe)
+  /debts/{debtId}/payments:
+    post:
+      summary: Record debt payment
+  /debts/reminders:
+    get:
+      summary: Overdue collection reminders
+  /tax/estimate:
+    get:
+      summary: Daily tax set-aside and monthly estimate
+  /mpesa/connect:
+    post:
+      summary: Create mock mpesa connection
+  /mpesa/simulate:
+    post:
+      summary: Simulate incoming mpesa event
+  /mpesa/transactions:
+    get:
+      summary: List ingested mpesa transactions
   /offline/sync:
     post:
-      tags: [Sync]
-      parameters: [{ $ref: '#/components/parameters/BusinessIdHeader' }]
-      summary: Push offline queued writes
-      responses:
-        '200': { description: Synced }
+      summary: Sync offline queued actions
