@@ -21,3 +21,25 @@ export const mobileComponents: ComponentSpec[] = [
   { name: 'LockedStateOverlay', purpose: 'Read-only lock state and pay CTA', props: ['lockReason', 'payNowAction'], touchTarget: 'xl' },
   { name: 'OfflineSyncIndicator', purpose: 'Pending offline actions count', props: ['pendingCount', 'lastSyncedAt'], touchTarget: 'lg' }
 ];
+export const mobileComponents = [
+  'TopStatusBarCard',
+  'ProfitHeroCard',
+  'GrowthPill',
+  'WalletBalanceCard',
+  'KpiDangerCard',
+  'QuickActionButtonXL',
+  'QuickAddBottomSheet',
+  'MpesaSyncStatusChip',
+  'InsightTextBanner',
+  'DebtRiskBadge',
+  'DebtReminderCard',
+  'InventoryItemCard',
+  'DeadStockAlertCard',
+  'TaxSetAsideCard',
+  'VatThresholdWarningCard',
+  'SubscriptionTrialBanner',
+  'LockedStateOverlay',
+  'OfflineSyncIndicator',
+  'SkeletonCard',
+  'ConfirmActionSheet'
+] as const;

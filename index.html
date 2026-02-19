@@ -1,538 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoSpec Kenya - Car Evaluator</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <style>
-        /* Custom Font and Base Styling */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #111827; /* bg-gray-900 */
-            color: #f3f4f6; /* text-gray-100 */
-        }
-
-        /* Glass Card Effect */
-        .glass-card {
-            background-color: rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem; /* rounded-2xl */
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Styled Input/Select Fields */
-        .styled-input {
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .styled-input:focus {
-            --tw-ring-color: #a855f7; /* ring-purple-500 */
-            box-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-            border-color: transparent;
-        }
-        .styled-input:disabled {
-            background-color: rgba(55, 65, 81, 0.5); /* bg-gray-700 opacity-50 */
-            cursor: not-allowed;
-        }
-
-        /* Custom animation for spinning cog */
-        @keyframes spin-slow {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        .animate-spin-slow {
-            animation: spin-slow 5s linear infinite;
-        }
-        
-        /* Hide element utility */
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
-<body class="min-h-screen p-4 relative overflow-x-hidden">
-    <!-- Background decorative elements -->
-    <div class="absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4 w-96 h-96 bg-purple-600 rounded-full opacity-20 blur-3xl pointer-events-none"></div>
-    <div class="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-96 h-96 bg-blue-600 rounded-full opacity-20 blur-3xl pointer-events-none"></div>
-
-    <div class="max-w-7xl mx-auto relative z-10">
-        <!-- Header -->
-        <header class="text-center mb-10">
-            <div class="inline-flex items-center justify-center gap-3 mb-4">
-                <i data-lucide="gauge-circle" class="w-12 h-12 text-purple-400"></i>
-                <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
-                    AutoSpec Kenya
-                </h1>
-            </div>
-            <p class="text-lg text-gray-300 max-w-3xl mx-auto">
-                Your advanced toolkit for estimating market value, import taxes, and high-end coating costs for vehicles in Kenya.
-            </p>
-        </header>
-
-        <main class="grid lg:grid-cols-5 gap-8">
-            <!-- Input Form Column -->
-            <div class="lg:col-span-2">
-                <div class="glass-card p-6 md:p-8">
-                    <h2 class="text-2xl font-semibold text-white mb-6 flex items-center gap-3">
-                        <i data-lucide="cog" class="w-7 h-7 text-blue-400 animate-spin-slow"></i>
-                        <span>Vehicle Configuration</span>
-                    </h2>
-                    <form id="evaluator-form" class="space-y-4">
-                        <select id="make" name="make" class="styled-input w-full rounded-lg p-3 transition-all duration-300">
-                            <option value="">Select Make</option>
-                        </select>
-                        <select id="model" name="model" class="styled-input w-full rounded-lg p-3 transition-all duration-300" disabled>
-                            <option value="">Select Model</option>
-                        </select>
-                        <select id="year" name="year" class="styled-input w-full rounded-lg p-3 transition-all duration-300" disabled>
-                            <option value="">Select Year</option>
-                        </select>
-                        
-                        <input id="mileage" type="number" name="mileage" placeholder="Mileage (km), e.g., 80000" class="styled-input w-full rounded-lg p-3 transition-all duration-300" />
-                        <input id="engineSize" type="number" step="0.1" name="engineSize" placeholder="Engine Size (L), e.g., 1.8" class="styled-input w-full rounded-lg p-3 transition-all duration-300" />
-                        <input id="cif" type="number" name="cif" placeholder="CIF Value (KES), e.g., 1500000" class="styled-input w-full rounded-lg p-3 transition-all duration-300" />
-                        
-                        <div class="pt-4">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input id="includeLiquidGlass" type="checkbox" name="includeLiquidGlass" class="w-5 h-5 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-600 ring-offset-gray-800 focus:ring-2" />
-                                <span class="font-medium text-white flex items-center gap-2">
-                                    <i data-lucide="sparkles" class="w-5 h-5 text-purple-400"></i>
-                                    Include Liquid Glass Coating
-                                </span>
-                            </label>
-                            <select id="vehicleSize" name="vehicleSize" class="styled-input w-full rounded-lg p-3 transition-all duration-300 mt-3 hidden">
-                                <option value="small">Small Car / Hatchback</option>
-                                <option value="sedan">Sedan / Saloon</option>
-                                <option value="suv">SUV / Crossover</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:scale-105 transform transition-all duration-300 ease-in-out flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-500/50">
-                            <i data-lucide="calculator" class="w-5 h-5"></i>
-                            <span>Calculate Estimate</span>
-                        </button>
-                    </form>
-                </div>
-                <div class="mt-8 text-center">
-                    <button id="open-modal-btn" class="text-sm text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2 mx-auto">
-                        <i data-lucide="info" class="w-4 h-4"></i>
-                        Disclaimer & Data Sources
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Results Column -->
-            <div class="lg:col-span-3">
-                <div id="results-card" class="glass-card min-h-full p-6 md:p-8">
-                    <!-- Results will be injected here by JavaScript -->
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Disclaimer Modal -->
-    <div id="disclaimer-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="glass-card w-full max-w-2xl relative p-6 md:p-8">
-            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <h3 class="text-xl font-semibold text-white mb-4">Disclaimer & Data Sources</h3>
-            <div class="text-gray-300 space-y-4 text-sm">
-                <p><strong>Disclaimer:</strong> The figures provided by this tool are estimates only, calculated based on publicly available data and standard formulas. They are intended for informational purposes and should not be considered as final or legally binding. Market values can vary significantly based on vehicle condition, mileage, optional features, and local market fluctuations. Tax rates and regulations are subject to change.</p>
-                <p><strong>Official Consultation:</strong> For precise and final import costs, it is imperative to consult the Kenya Revenue Authority (KRA). We are not affiliated with KRA.</p>
-                <div class="pt-4">
-                    <h4 class="font-semibold text-gray-200 mb-2">Primary Data Sources:</h4>
-                    <div class="space-y-1">
-                       <a href="https://kra.go.ke" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-blue-400 transition-colors">
-                         <i data-lucide="external-link" class="w-4 h-4"></i> Kenya Revenue Authority (KRA) - For tax guidelines.
-                       </a>
-                       <p class="flex items-center gap-2 text-gray-400"><i data-lucide="info" class="w-4 h-4"></i> KRA CRSP (Current Retail Selling Price) values are simulated for this demo.</p>
-                    </div>
-                </div>
-            </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biashara Control — Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app" id="app">
+      <header class="topbar card">
+        <div>
+          <h1>Biashara Control</h1>
+          <p class="muted">Daily business survival dashboard</p>
         </div>
-    </div>
+        <button id="syncBtn" class="pill">Sync</button>
+      </header>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+      <section id="statusBanner" class="status-banner card" aria-live="polite">
+        <p id="statusMessage" class="status-message"></p>
+        <p id="todayProfit" class="today-profit"></p>
+        <p id="statusHint" class="status-hint"></p>
+      </section>
 
-    // --- DATA ---
-    const crspData = {
-        'Toyota': {
-            'Vitz': { 2018: 1100000, 2019: 1250000, 2020: 1400000, 2021: 1550000, 2022: 1700000 },
-            'Passo': { 2018: 1050000, 2019: 1150000, 2020: 1300000, 2021: 1450000, 2022: 1600000 },
-            'Axio': { 2018: 1600000, 2019: 1750000, 2020: 1900000, 2021: 2100000, 2022: 2300000 },
-            'Fielder': { 2018: 1700000, 2019: 1850000, 2020: 2000000, 2021: 2200000, 2022: 2400000 },
-            'Probox': { 2018: 950000, 2019: 1050000, 2020: 1200000, 2021: 1350000, 2022: 1500000 },
-            'Premio': { 2018: 2400000, 2019: 2600000, 2020: 2800000, 2021: 3100000, 2022: 3400000 },
-            'Harrier': { 2018: 3400000, 2019: 3800000, 2020: 4200000, 2021: 4600000, 2022: 5000000 },
-            'RAV4': { 2018: 3200000, 2019: 3600000, 2020: 4000000, 2021: 4400000, 2022: 4800000 },
-            'Land Cruiser Prado': { 2018: 6500000, 2019: 7200000, 2020: 8000000, 2021: 9000000, 2022: 10000000 },
-        },
-        'Nissan': {
-            'Note': { 2018: 1250000, 2019: 1400000, 2020: 1600000, 2021: 1750000, 2022: 1900000 },
-            'Tiida': { 2018: 1450000, 2019: 1600000, 2020: 1800000, 2021: 1950000, 2022: 2100000 },
-            'X-Trail': { 2018: 3100000, 2019: 3400000, 2020: 3800000, 2021: 4200000, 2022: 4600000 },
-            'Serena': { 2018: 2200000, 2019: 2400000, 2020: 2600000, 2021: 2800000, 2022: 3000000 },
-            'Navara': { 2018: 3500000, 2019: 3900000, 2020: 4300000, 2021: 4700000, 2022: 5100000 },
-        },
-        'Honda': {
-            'Fit': { 2018: 1200000, 2019: 1350000, 2020: 1500000, 2021: 1650000, 2022: 1800000 },
-            'Vezel': { 2018: 2700000, 2019: 3000000, 2020: 3400000, 2021: 3700000, 2022: 4000000 },
-            'CR-V': { 2018: 3300000, 2019: 3700000, 2020: 4100000, 2021: 4500000, 2022: 4900000 },
-            'Freed': { 2018: 1500000, 2019: 1650000, 2020: 1800000, 2021: 2000000, 2022: 2200000 },
-        },
-        'Mazda': {
-            'Demio': { 2018: 1050000, 2019: 1150000, 2020: 1300000, 2021: 1450000, 2022: 1600000 },
-            'Axela': { 2018: 1900000, 2019: 2100000, 2020: 2400000, 2021: 2600000, 2022: 2800000 },
-            'CX-5': { 2018: 3200000, 2019: 3600000, 2020: 4000000, 2021: 4400000, 2022: 4800000 },
-            'CX-3': { 2018: 2300000, 2019: 2500000, 2020: 2700000, 2021: 2900000, 2022: 3100000 },
-        },
-        'Subaru': {
-            'Impreza': { 2018: 1800000, 2019: 2000000, 2020: 2200000, 2021: 2400000, 2022: 2600000 },
-            'Forester': { 2018: 2900000, 2019: 3200000, 2020: 3500000, 2021: 3900000, 2022: 4300000 },
-            'Legacy': { 2018: 2500000, 2019: 2800000, 2020: 3100000, 2021: 3400000, 2022: 3700000 },
-            'XV': { 2018: 2600000, 2019: 2900000, 2020: 3200000, 2021: 3500000, 2022: 3800000 },
-        },
-        'Volkswagen': {
-            'Polo': { 2018: 1500000, 2019: 1700000, 2020: 1900000, 2021: 2100000, 2022: 2300000 },
-            'Golf': { 2018: 2200000, 2019: 2500000, 2020: 2800000, 2021: 3100000, 2022: 3400000 },
-            'Tiguan': { 2018: 3300000, 2019: 3700000, 2020: 4100000, 2021: 4500000, 2022: 4900000 },
-        },
-        'Mitsubishi': {
-            'Outlander': { 2018: 3000000, 2019: 3300000, 2020: 3600000, 2021: 4000000, 2022: 4400000 },
-            'Pajero': { 2018: 4500000, 2019: 5000000, 2020: 5500000, 2021: 6000000, 2022: 6500000 },
-        },
-        'Isuzu': {
-            'D-Max': { 2018: 3600000, 2019: 4000000, 2020: 4400000, 2021: 4800000, 2022: 5200000 },
-        }
-    };
-    const liquidGlassPricing = {
-        small: 50000, sedan: 70000, suv: 90000
-    };
+      <section class="card">
+        <h2>Quick Add</h2>
+        <div class="quick-actions">
+          <button class="quick-btn sale" data-type="sale">+ Sale</button>
+          <button class="quick-btn expense" data-type="expense">+ Expense</button>
+          <button class="quick-btn stock" data-type="stock">+ Stock Bought</button>
+          <button class="quick-btn debt" data-type="debt">+ Record Debt</button>
+        </div>
+      </section>
 
-    // --- DOM Elements ---
-    const form = document.getElementById('evaluator-form');
-    const makeSelect = document.getElementById('make');
-    const modelSelect = document.getElementById('model');
-    const yearSelect = document.getElementById('year');
-    const liquidGlassCheckbox = document.getElementById('includeLiquidGlass');
-    const vehicleSizeSelect = document.getElementById('vehicleSize');
-    const resultsCard = document.getElementById('results-card');
-    const modal = document.getElementById('disclaimer-modal');
-    const openModalBtn = document.getElementById('open-modal-btn');
-    const closeModalBtn = document.getElementById('close-modal-btn');
+      <section class="card">
+        <h2>Money Position</h2>
+        <div class="money-grid" id="moneyCards"></div>
+      </section>
 
-    // --- State Object ---
-    let formData = {
-        make: '', model: '', year: '', mileage: '',
-        engineSize: '', cif: '', vehicleSize: 'sedan',
-        includeLiquidGlass: false
-    };
+      <section class="card">
+        <h2>Business Health</h2>
+        <div class="health-list" id="healthList"></div>
+      </section>
 
-    // --- Functions ---
-    const populateMakes = () => {
-        const makes = Object.keys(crspData);
-        makeSelect.innerHTML = '<option value="">Select Make</option>';
-        makes.forEach(make => {
-            const option = document.createElement('option');
-            option.value = make;
-            option.textContent = make;
-            makeSelect.appendChild(option);
-        });
-    };
+      <section class="card">
+        <h2>Smart Alerts</h2>
+        <div id="alertsPanel" class="stack"></div>
+      </section>
 
-    const populateModels = (make) => {
-        const models = make ? Object.keys(crspData[make] || {}) : [];
-        modelSelect.innerHTML = '<option value="">Select Model</option>';
-        if(models.length > 0){
-            modelSelect.disabled = false;
-            models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model;
-                option.textContent = model;
-                modelSelect.appendChild(option);
-            });
-        } else {
-            modelSelect.disabled = true;
-        }
-        // Reset year select
-        yearSelect.innerHTML = '<option value="">Select Year</option>';
-        yearSelect.disabled = true;
-    };
+      <section class="card">
+        <h2>Today Activity</h2>
+        <div id="timeline" class="stack"></div>
+      </section>
+    </main>
 
-    const populateYears = (make, model) => {
-        const years = (make && model) ? Object.keys(crspData[make]?.[model] || {}).sort((a,b) => b-a) : [];
-        yearSelect.innerHTML = '<option value="">Select Year</option>';
-        if(years.length > 0){
-            yearSelect.disabled = false;
-            years.forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                yearSelect.appendChild(option);
-            });
-        } else {
-            yearSelect.disabled = true;
-        }
-    };
+    <dialog id="quickAddModal" class="modal">
+      <form id="quickAddForm" class="modal-content" method="dialog">
+        <h3 id="modalTitle"></h3>
+        <label>
+          Amount (KES)
+          <input type="number" id="modalAmount" min="1" required />
+        </label>
+        <label>
+          Note
+          <input type="text" id="modalNote" maxlength="80" placeholder="Optional note" />
+        </label>
+        <menu>
+          <button value="cancel" class="secondary">Cancel</button>
+          <button value="confirm" id="saveEntryBtn">Save</button>
+        </menu>
+      </form>
+    </dialog>
 
-    const renderResults = (results) => {
-        let content = '';
-        if (!results) {
-            content = `
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-semibold text-white flex items-center gap-3">
-                        <i data-lucide="info" class="w-7 h-7 text-green-400"></i>
-                        <span>Evaluation Report</span>
-                    </h2>
-                </div>
-                <div class="text-center py-20 flex flex-col items-center justify-center h-full">
-                    <i data-lucide="car" class="w-24 h-24 text-gray-500 mx-auto mb-6 opacity-50"></i>
-                    <p class="text-gray-400 text-lg">Configure your vehicle to generate a detailed report.</p>
-                </div>
-            `;
-        } else {
-            const valuationHtml = results.valuation ? `
-                <div class="bg-black bg-opacity-20 p-4 rounded-lg">
-                    <h3 class="font-semibold text-blue-300 mb-3">Market Valuation</h3>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between items-center"><span>Base CRSP:</span> <span class="font-mono">KES ${results.valuation.baseValue.toLocaleString()}</span></div>
-                        <div class="flex justify-between items-center text-red-400"><span>Depreciation:</span> <span class="font-mono">${results.valuation.depreciationRate.toFixed(1)}%</span></div>
-                        ${results.valuation.mileageAdjustment > 0 ? `<div class="flex justify-between items-center text-red-400"><span>Mileage Adj:</span> <span class="font-mono">-${results.valuation.mileageAdjustment.toFixed(1)}%</span></div>` : ''}
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-white/10">
-                        <span class="text-sm text-gray-300">Est. Market Value:</span>
-                        <p class="text-lg font-bold text-blue-300">KES ${results.valuation.lowerRange.toLocaleString(undefined, {maximumFractionDigits: 0})} - ${results.valuation.upperRange.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
-                    </div>
-                </div>` : `<div class="bg-black bg-opacity-20 p-4 rounded-lg flex items-center justify-center text-gray-400">Select Make, Model, & Year for valuation.</div>`;
-            
-            const importTaxHtml = results.importTax ? 
-                (!results.importTax.error ? `
-                <div class="bg-black bg-opacity-20 p-4 rounded-lg">
-                    <h3 class="font-semibold text-purple-300 mb-3">Import Tax Breakdown</h3>
-                    <div class="space-y-1 text-sm font-mono">
-                        <div class="flex justify-between"><span>Import Duty:</span> <span>${results.importTax.importDuty.toLocaleString()}</span></div>
-                        <div class="flex justify-between"><span>Excise Duty:</span> <span>${results.importTax.exciseDuty.toLocaleString()}</span></div>
-                        <div class="flex justify-between"><span>VAT:</span> <span>${results.importTax.vat.toLocaleString()}</span></div>
-                        <div class="flex justify-between"><span>IDF:</span> <span>${results.importTax.idf.toLocaleString()}</span></div>
-                        <div class="flex justify-between"><span>RDL:</span> <span>${results.importTax.rdl.toLocaleString()}</span></div>
-                        <div class="flex justify-between"><span>Fees:</span> <span>${results.importTax.flatFees.toLocaleString()}</span></div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-white/10 flex justify-between text-lg font-bold">
-                        <span class="text-purple-300">Total Tax:</span>
-                        <span class="text-purple-300">KES ${results.importTax.totalTax.toLocaleString()}</span>
-                    </div>
-                </div>` : `<div class="bg-red-900/50 p-4 rounded-lg flex items-center justify-center text-red-300 font-semibold">${results.importTax.error}</div>`) 
-                : `<div class="bg-black bg-opacity-20 p-4 rounded-lg flex items-center justify-center text-gray-400">Enter CIF Value for tax calculation.</div>`;
-            
-            const liquidGlassHtml = results.liquidGlassPrice > 0 ? `
-                <div class="bg-black bg-opacity-20 p-4 rounded-lg col-span-full">
-                    <h3 class="font-semibold text-teal-300 mb-3 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5"></i>Liquid Glass Coating</h3>
-                    <div class="flex justify-between items-center">
-                        <div class="text-sm">
-                            <p>For a <span class="font-semibold capitalize">${formData.vehicleSize}</span> size vehicle</p>
-                            <div class="flex flex-wrap gap-4 text-xs text-gray-400 mt-1">
-                                <span>✓ Scratch Resistance</span><span>✓ UV Protection</span><span>✓ Enhanced Gloss</span>
-                            </div>
-                        </div>
-                        <p class="text-lg font-bold text-teal-300">KES ${results.liquidGlassPrice.toLocaleString()}</p>
-                    </div>
-                </div>` : '';
-
-            content = `
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-semibold text-white flex items-center gap-3">
-                        <i data-lucide="info" class="w-7 h-7 text-green-400"></i>
-                        <span>Evaluation Report</span>
-                    </h2>
-                    <button id="copy-summary-btn" class="flex items-center gap-2 px-4 py-2 bg-black bg-opacity-30 hover:bg-opacity-50 border border-white border-opacity-10 rounded-lg transition-all duration-200 text-sm">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
-                        <span>Copy Summary</span>
-                    </button>
-                </div>
-                <div class="space-y-6">
-                    <div class="bg-gradient-to-br from-green-500/20 to-green-500/5 rounded-lg p-6 text-center">
-                        <h3 class="text-md font-semibold text-green-300 mb-2">Total Estimated Landed Cost</h3>
-                        <p class="text-4xl font-bold text-white">KES ${results.totalEstimatedCost.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
-                        <p class="text-sm text-gray-400 mt-2">Includes market value, import tax${results.liquidGlassPrice > 0 ? ', and Liquid Glass coating' : ''}.</p>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        ${valuationHtml}
-                        ${importTaxHtml}
-                        ${liquidGlassHtml}
-                    </div>
-                </div>
-            `;
-        }
-        resultsCard.innerHTML = content;
-        lucide.createIcons(); // Re-render icons after updating DOM
-    };
-
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        // Update formData from all fields
-        const formElements = e.target.elements;
-        formData = {
-            make: formElements.make.value,
-            model: formElements.model.value,
-            year: formElements.year.value,
-            mileage: formElements.mileage.value,
-            engineSize: formElements.engineSize.value,
-            cif: formElements.cif.value,
-            vehicleSize: formElements.vehicleSize.value,
-            includeLiquidGlass: formElements.includeLiquidGlass.checked
-        };
-        
-        // --- Calculation Logic (moved from React component) ---
-        const calculateValuation = () => {
-            if (!formData.make || !formData.model || !formData.year) return null;
-            const baseValue = crspData[formData.make]?.[formData.model]?.[formData.year];
-            if (!baseValue) return null;
-            const carAge = new Date().getFullYear() - parseInt(formData.year);
-            const depreciationRate = Math.min(carAge * 0.1, 0.65);
-            const depreciatedValue = baseValue * (1 - depreciationRate);
-            const mileage = parseInt(formData.mileage) || 0;
-            let mileageAdjustment = 0;
-            if (mileage > 100000) {
-              mileageAdjustment = Math.floor((mileage - 100000) / 50000) * 0.05;
-            }
-            const adjustedValue = depreciatedValue * (1 - mileageAdjustment);
-            return {
-              baseValue, lowerRange: adjustedValue * 0.85, upperRange: adjustedValue * 1.15,
-              depreciationRate: depreciationRate * 100, mileageAdjustment: mileageAdjustment * 100
-            };
-        };
-
-        const calculateImportTax = () => {
-            const cif = parseInt(formData.cif) || 0;
-            if (!cif) return { error: "Please enter a CIF value to calculate import tax." };
-            const year = parseInt(formData.year) || new Date().getFullYear();
-            if (new Date().getFullYear() - year > 8) return { error: "Vehicles older than 8 years cannot be imported." };
-            const engineSize = parseFloat(formData.engineSize) || 0;
-            const importDuty = cif * 0.35;
-            const exciseRate = engineSize <= 2.0 ? 0.20 : 0.35;
-            const exciseDuty = cif * exciseRate;
-            const vat = (cif + importDuty + exciseDuty) * 0.16;
-            const idf = cif * 0.035;
-            const rdl = cif * 0.02;
-            const flatFees = 153000;
-            const totalTax = importDuty + exciseDuty + vat + idf + rdl + flatFees;
-            return { importDuty, exciseDuty, vat, idf, rdl, flatFees, totalTax, exciseRate: exciseRate * 100 };
-        };
-
-        const valuation = calculateValuation();
-        const importTax = calculateImportTax();
-        const liquidGlassPrice = formData.includeLiquidGlass ? liquidGlassPricing[formData.vehicleSize] : 0;
-        
-        let totalCost = 0;
-        if(importTax && !importTax.error) totalCost += importTax.totalTax;
-        if(valuation) totalCost += (valuation.lowerRange + valuation.upperRange) / 2;
-        totalCost += liquidGlassPrice;
-
-        const finalResults = { valuation, importTax, liquidGlassPrice, totalEstimatedCost: totalCost };
-        
-        // Store results globally for copy function
-        window.currentResults = finalResults;
-        
-        renderResults(finalResults);
-    };
-    
-    // --- Event Listeners ---
-    makeSelect.addEventListener('change', (e) => {
-        populateModels(e.target.value);
-    });
-
-    modelSelect.addEventListener('change', (e) => {
-        populateYears(makeSelect.value, e.target.value);
-    });
-
-    liquidGlassCheckbox.addEventListener('change', (e) => {
-        vehicleSizeSelect.classList.toggle('hidden', !e.target.checked);
-    });
-
-    form.addEventListener('submit', handleFormSubmit);
-
-    // Modal listeners
-    openModalBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-    closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
-    });
-
-    // Clipboard listener (event delegation)
-    resultsCard.addEventListener('click', (e) => {
-        const copyBtn = e.target.closest('#copy-summary-btn');
-        if (copyBtn) {
-            const results = window.currentResults;
-            if (!results) return;
-
-            const summary = `
-**KENYAN CAR EVALUATION SUMMARY**
-===============================
-Vehicle: ${formData.make} ${formData.model} ${formData.year}
-Mileage: ${formData.mileage || 'N/A'} km
-Engine Size: ${formData.engineSize || 'N/A'}L
--------------------------------
-**VALUATION:**
-- Base KRA CRSP Value: KES ${results.valuation?.baseValue?.toLocaleString() || 'N/A'}
-- Estimated Market Value: KES ${results.valuation?.lowerRange?.toLocaleString() || 'N/A'} - ${results.valuation?.upperRange?.toLocaleString() || 'N/A'}
--------------------------------
-**IMPORT TAX BREAKDOWN:**
-- CIF Value: KES ${formData.cif ? parseInt(formData.cif).toLocaleString() : 'N/A'}
-- Import Duty (35%): KES ${results.importTax?.importDuty?.toLocaleString() || 'N/A'}
-- Excise Duty (${results.importTax?.exciseRate || 'N/A'}%): KES ${results.importTax?.exciseDuty?.toLocaleString() || 'N/A'}
-- VAT (16%): KES ${results.importTax?.vat?.toLocaleString() || 'N/A'}
-- IDF (3.5%): KES ${results.importTax?.idf?.toLocaleString() || 'N/A'}
-- RDL (2%): KES ${results.importTax?.rdl?.toLocaleString() || 'N/A'}
-- Flat Fees: KES ${results.importTax?.flatFees?.toLocaleString() || 'N/A'}
-- **Total Import Tax:** KES ${results.importTax?.totalTax?.toLocaleString() || 'N/A'}
--------------------------------
-${formData.includeLiquidGlass ? `**LIQUID GLASS COATING:** KES ${results.liquidGlassPrice.toLocaleString()}` : ''}
-===============================
-**TOTAL ESTIMATED COST:** KES ${results.totalEstimatedCost.toLocaleString() || 'N/A'}
-===============================
-DISCLAIMER: These are estimates only. Please consult KRA for final import costs.
-Generated by Kenyan Car Evaluator - ${new Date().toLocaleDateString()}
-            `.replace(/^ +/gm, '').trim();
-
-            const textArea = document.createElement("textarea");
-            textArea.value = summary;
-            textArea.style.position = "fixed";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                const btnContent = copyBtn.innerHTML;
-                copyBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-green-400"></i> Copied!`;
-                lucide.createIcons();
-                setTimeout(() => {
-                    copyBtn.innerHTML = btnContent;
-                    lucide.createIcons();
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
-            }
-            document.body.removeChild(textArea);
-        }
-    });
-
-    // --- Initial Setup ---
-    populateMakes();
-    renderResults(null); // Render initial placeholder
-    lucide.createIcons(); // Initial icon render
-});
-</script>
-</body>
+    <script src="./app.js"></script>
+  </body>
 </html>

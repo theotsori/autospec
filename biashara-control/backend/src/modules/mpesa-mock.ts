@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 
 export type SimulatedMpesaInput = {
+type SimulatedMpesaInput = {
   amountKes: number;
   msisdn: string;
   message: string;
@@ -23,6 +24,10 @@ export const mapCategoryToLedgerType = (category: MpesaCategory) => {
   if (category === 'owner_withdrawal') return 'owner_withdrawal';
   if (category === 'transfer') return 'transfer';
   if (category === 'expense') return 'expense';
+  if (m.includes('supplier') || m.includes('wholesale')) return 'supplier_payment';
+  if (m.includes('withdraw') || m.includes('owner')) return 'owner_withdrawal';
+  if (m.includes('transfer')) return 'transfer';
+  if (m.includes('buy') || m.includes('expense') || m.includes('bill')) return 'expense';
   return 'sale';
 };
 
@@ -43,6 +48,9 @@ export const buildMockWebhookPayload = (input: SimulatedMpesaInput) => {
       ResultCode: 0,
       ResultDesc: 'The service request is processed successfully.',
       BusinessShortCode: '600111',
+    rawPayload: {
+      ResultCode: 0,
+      ResultDesc: 'The service request is processed successfully.',
       CallbackMetadata: {
         Item: [
           { Name: 'Amount', Value: input.amountKes },

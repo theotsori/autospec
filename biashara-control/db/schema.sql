@@ -1,8 +1,10 @@
+-- Biashara Control: PostgreSQL schema (multi-tenant, owner-only MVP)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TYPE plan_status AS ENUM ('trialing', 'active', 'past_due', 'locked');
 CREATE TYPE ledger_source AS ENUM ('manual', 'mpesa', 'system');
 CREATE TYPE ledger_type AS ENUM ('sale', 'expense', 'stock_purchase', 'supplier_payment', 'owner_withdrawal', 'owner_topup', 'transfer');
+CREATE TYPE ledger_type AS ENUM ('sale', 'expense', 'stock_purchase', 'supplier_payment', 'owner_withdrawal', 'owner_topup', 'loan_in', 'loan_out', 'transfer');
 CREATE TYPE debt_direction AS ENUM ('owed_to_me', 'i_owe');
 CREATE TYPE debt_status AS ENUM ('open', 'partial', 'closed', 'defaulted');
 CREATE TYPE inventory_event_type AS ENUM ('stock_in', 'stock_out', 'adjustment');
@@ -84,6 +86,7 @@ CREATE TABLE ledger_entries (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (business_id, idempotency_key)
 );
+
 CREATE INDEX idx_ledger_business_time ON ledger_entries (business_id, happened_at DESC);
 CREATE INDEX idx_ledger_business_type ON ledger_entries (business_id, type, happened_at DESC);
 
@@ -113,6 +116,7 @@ CREATE TABLE inventory_events (
   happened_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 CREATE INDEX idx_inventory_events_business_time ON inventory_events (business_id, happened_at DESC);
 
 CREATE TABLE debts (
@@ -129,6 +133,7 @@ CREATE TABLE debts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 CREATE INDEX idx_debts_business_status ON debts (business_id, status, due_date);
 
 CREATE TABLE debt_payments (
@@ -238,3 +243,7 @@ CREATE POLICY tenant_inventory_policy ON inventory_items
 CREATE POLICY tenant_debts_policy ON debts
   USING (business_id = current_setting('app.business_id', true)::uuid)
   WITH CHECK (business_id = current_setting('app.business_id', true)::uuid);
+  queued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  synced_at TIMESTAMPTZ,
+  failed_at TIMESTAMPTZ
+);

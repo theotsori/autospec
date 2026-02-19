@@ -28,6 +28,16 @@ export const shouldLockBusiness = (s: SubscriptionRecord, now = new Date()) => {
   if (resolveSubscriptionState(s, now) === 'locked') return true;
   const graceUntil = s.graceUntil ?? computeGraceUntil(s);
   return now > graceUntil;
+export const shouldLockBusiness = (s: SubscriptionRecord, now = new Date()) => {
+  const state = resolveSubscriptionState(s, now);
+  if (state === 'locked') return true;
+
+  const graceDays = 7;
+  const dueDate = s.paidUntil ?? s.trialEndAt;
+  const lockDate = new Date(dueDate);
+  lockDate.setDate(lockDate.getDate() + graceDays);
+
+  return now > lockDate;
 };
 
 export const subscriptionGate = (state: SubscriptionState) => ({
@@ -35,6 +45,7 @@ export const subscriptionGate = (state: SubscriptionState) => ({
   allowRead: true,
   allowExport: true,
   showPaywall: state === 'past_due' || state === 'locked'
+  showLockBanner: state === 'past_due' || state === 'locked'
 });
 
 export const applyPayment = (current: SubscriptionRecord, paidAt: Date, months = 1): SubscriptionRecord => {
@@ -57,3 +68,6 @@ export const lockSubscription = (current: SubscriptionRecord, reason = 'unpaid')
   lockedAt: new Date(),
   graceUntil: current.graceUntil ?? computeGraceUntil(current)
 });
+    lockedAt: null
+  };
+};

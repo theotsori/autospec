@@ -287,3 +287,76 @@ paths:
       summary: Push offline queued writes
       responses:
         '200': { description: Synced }
+paths:
+  /auth/signup:
+    post:
+      summary: Register business + owner + trial subscription
+  /auth/login:
+    post:
+      summary: Login owner
+  /auth/refresh:
+    post:
+      summary: Rotate access token
+  /subscription/status:
+    get:
+      summary: Get trial/payment/lock status
+  /subscription/payments/initiate:
+    post:
+      summary: Initiate mobile payment request (mock)
+  /subscription/payments/webhook:
+    post:
+      summary: Payment callback endpoint
+  /dashboard/today:
+    get:
+      summary: Mobile dashboard metrics
+  /metrics/profit:
+    get:
+      summary: Daily weekly monthly profit and burn rate
+  /ledger/entries:
+    post:
+      summary: Add manual sales/expense/stock entries
+    get:
+      summary: List entries with date filters
+  /wallets:
+    get:
+      summary: Cash and mpesa balances
+  /inventory/items:
+    get:
+      summary: List stock items
+    post:
+      summary: Add item
+  /inventory/items/{itemId}:
+    patch:
+      summary: Update item
+  /inventory/events:
+    post:
+      summary: Stock in/out/adjustment
+  /inventory/alerts:
+    get:
+      summary: Dead stock and low stock alerts
+  /debts:
+    get:
+      summary: List debts
+    post:
+      summary: Create debt (owed_to_me or i_owe)
+  /debts/{debtId}/payments:
+    post:
+      summary: Record debt payment
+  /debts/reminders:
+    get:
+      summary: Overdue collection reminders
+  /tax/estimate:
+    get:
+      summary: Daily tax set-aside and monthly estimate
+  /mpesa/connect:
+    post:
+      summary: Create mock mpesa connection
+  /mpesa/simulate:
+    post:
+      summary: Simulate incoming mpesa event
+  /mpesa/transactions:
+    get:
+      summary: List ingested mpesa transactions
+  /offline/sync:
+    post:
+      summary: Sync offline queued actions
